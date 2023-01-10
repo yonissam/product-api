@@ -1,20 +1,197 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
 	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
 		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
 		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
 	<munit:config name="implementation-test-suite.xml" />
 	<munit:test name="implementation-test-suite-get:\products:product-api-configTest" doc:id="d0dccb5d-2045-4e0b-8d2f-166e9c34bd4d" description="Test">
 		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="dddd7de5-2dc2-4c8c-8ca4-f62ae25c8c93" />
 			<flow-ref doc:name="Flow-ref to get:\products:product-api-config" doc:id="e5d0e794-f440-4074-ba7f-eb936923e16c" name="get:\products:product-api-config"/>
 		</munit:execution>
 		<munit:validation >
 			<logger level="INFO" doc:name="Logger" doc:id="6f72535a-c6f2-44b4-931c-cee858e89724" message="#[payload]"/>
 			<munit-tools:assert doc:name="Assert Payload Not Null" doc:id="ff139a4b-2940-41e6-b3d8-bb964a5e37f2" />
+		</munit:validation>
+		</munit:test>
+	
+	
+    <http:request-config name="HTTP_Request_Configuration" basePath="/api">
+        <http:request-connection host="localhost" port="8081" />
+    </http:request-config>
+    <munit:test name="get:\products:product-api-config-200-application\json-FlowTest" description="Verifying functionality of [get:\products:product-api-config-200-application\json]">
+        <munit:enable-flow-sources>
+            <munit:enable-flow-source value="product-api-main" />
+            <munit:enable-flow-source value="get:\products:product-api-config" />
+        </munit:enable-flow-sources>
+        <munit:execution>
+            <http:request config-ref="HTTP_Request_Configuration" method="GET" path="/products">
+                <http:headers>#[{"Accept":"application/json"}]</http:headers>
+            </http:request>
+        </munit:execution>
+        <munit:validation>
+            <munit-tools:assert-that expression="#[attributes.statusCode]" is="#[MunitTools::equalTo(200)]" message="The HTTP Status code is not correct!" doc:name="Assert That Status Code is 200" />
+			<munit-tools:assert doc:name="Assert expression" doc:id="69e88b0c-fbcb-4585-8a18-a4296db704e7" >
+				<munit-tools:that ><![CDATA[#[import scaffolderresponse::response
+ ---
+response::main({payload : payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+        </munit:validation>
+    </munit:test>
+	<munit:test name="implementation-test-suiteTest" doc:id="a51bee95-c818-42aa-9381-fa604d1903ee" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="ccb579e6-14af-439b-8c30-c41b3f6dc446" processor="apikit:router">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="product-api-config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="APIKIT:BAD_REQUEST" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="f6dad2a1-a605-434f-ad2a-737902d35eda" />
+			<try doc:name="Try" doc:id="3e0d8947-3ad9-45bb-b0ff-67078632760d" >
+				<flow-ref doc:name="Flow-ref to get:\products:product-api-config" doc:id="91f65df9-2be7-45c2-9ad1-403b0d38224c" name="product-api-main" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="66dedf3e-a9dd-4ab5-be05-1dda723bd574" >
+						<logger level="INFO" doc:name="Logger" doc:id="2bbc0b07-7551-4f02-a214-f3f8004777e0" message="#[payload]"/>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert expression" doc:id="036dec6c-42ef-4d24-bb9f-5200e0a98a81" >
+				<munit-tools:that ><![CDATA[#[import scaffolderresponse::error
+ ---
+error::main({payload : payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="implementation-test-suiteTest1" doc:id="4e39305b-366b-432e-a865-352cc5d72ba4" >
+		<munit:behavior>
+			<munit-tools:mock-when doc:name="Mock when" doc:id="4d675cf9-cc4c-42d1-a945-eb344d086f0d" processor="apikit:router" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="product-api-config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="APIKIT:NOT_FOUND" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="6c26e34b-d7ae-4e34-a44a-a1d3a9cdeb00" />
+			<try doc:name="Try" doc:id="852297a4-fd2f-49ce-a2a7-2c2a30aef8cb" >
+				<flow-ref doc:name="Flow-ref to get:\products:product-api-config" doc:id="259a95db-7c8e-489b-a3fc-1858da2efc13" name="product-api-main" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="2d981d9a-e072-43ee-a825-1e254daee20c" >
+						<logger level="INFO" doc:name="Logger" doc:id="286ef406-5f10-40c0-a943-e2275d25a63d" message="#[payload]" />
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert expression" doc:id="2cc6eaf8-2eb1-4e7e-87e4-232f51afa21b" >
+				<munit-tools:that ><![CDATA[#[import scaffolderresponse::error2
+ ---
+error2::main({payload : payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="implementation-test-suiteTest2" doc:id="528f3df4-c144-4f04-b977-eb4d05670fc5" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="88b79c66-9ead-40cb-96b6-ae4d3ec6d460" processor="apikit:console" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="product-api-config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="APIKIT:NOT_FOUND" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="8b9a49f8-6737-4c72-8c4e-6a3e97acf5e8" />
+			<try doc:name="Try" doc:id="235f856a-9fa9-4eb8-a465-2fad10c6602c" >
+				<flow-ref doc:name="Flow-ref to get:\products:product-api-config" doc:id="a116c842-c280-42ef-9923-49117da4afa7" name="product-api-console" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6738a28d-24b6-4101-b02e-9a616645280b" >
+						<logger level="INFO" doc:name="Logger" doc:id="ecf0f1dc-157f-489c-b771-8054959cba67" message="#[payload]" />
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert expression" doc:id="6a1c2a1a-36aa-4d31-a0cb-b7a3d51f0c0b" >
+				<munit-tools:that ><![CDATA[#[import scaffolderresponse::error2
+ ---
+error2::main({payload : payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="implementation-test-suiteTest3" doc:id="9ab9ac86-2606-4726-b2ac-d04dbc97c36e" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="b0abc708-2978-4125-b99e-8ebed172e909" processor="apikit:router" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="product-api-config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="APIKIT:METHOD_NOT_ALLOWED" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="776f5f7a-958e-41b9-8e19-1b07051cad83" />
+			<try doc:name="Try" doc:id="61edbeb5-8e18-4a8b-adfa-0bc4dd01a12a" >
+				<flow-ref doc:name="Flow-ref to get:\products:product-api-config" doc:id="3d3685ed-de85-40f7-ae8f-45d309a906ab" name="product-api-main" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="b277656d-f5a2-41d8-8125-0e2c023ec1ab" >
+						<logger level="INFO" doc:name="Logger" doc:id="0c599c81-37fa-4e25-8fe6-20b449521632" message="#[payload]" />
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert expression" doc:id="f126e4f3-0de6-4e15-a97d-d59192cbe244" >
+				<munit-tools:that ><![CDATA[#[import scaffolderresponse::error3
+ ---
+error3::main({payload : payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="implementation-test-suiteTest4" doc:id="0da833d8-33eb-49f8-a5d3-0de8cada2213" >
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="6d9541c8-0a1b-48c4-a606-effd962a5bd2" processor="apikit:router" >
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="product-api-config" attributeName="config-ref" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="APIKIT:NOT_ACCEPTABLE" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="Set Event" doc:id="c1179256-cff6-4181-9904-a36af0125ebf" />
+			<try doc:name="Try" doc:id="ec775dbc-20e9-4a5b-95bd-6fb07b323950" >
+				<flow-ref doc:name="Flow-ref to get:\products:product-api-config" doc:id="d5566122-2108-48f3-afb8-bcdc8e42c6ee" name="product-api-main" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6585503a-eb39-47a5-8405-a780c0b807c4" >
+						<logger level="INFO" doc:name="Logger" doc:id="ea653835-0268-4b7b-b2a2-c2020024be43" message="#[payload]" />
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert expression" doc:id="4292ab7b-670a-4cd1-a9e8-08c0443f0770" >
+				<munit-tools:that ><![CDATA[#[import scaffolderresponse::error4
+ ---
+error4::main({payload : payload, attributes: attributes, vars: vars})]]]></munit-tools:that>
+			</munit-tools:assert>
 		</munit:validation>
 	</munit:test>
 
